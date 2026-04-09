@@ -58,7 +58,7 @@ A estrutura inclui:
 
 ### 1. Inicializar os containers
 
-Certifique-se de que o Docker Desktop está em execução.
+Certifique-se de que o Docker Desktop está em execução. (todos os comandos devem ser executados nas respectivas pastas em que os dockerfiles estão)
 
 ```bash
 docker-compose up -d
