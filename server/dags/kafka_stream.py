@@ -103,7 +103,7 @@ def _data_stream():
     try:
 
         # Cria uma conexão com o broker Kafka
-        producer = KafkaProducer(bootstrap_servers = ["broker:29092"], max_block_ms = 5000)
+        producer = KafkaProducer(bootstrap_servers = ["broker:9092"], max_block_ms = 5000)
 
         # Aguarda 5 segundos antes de iniciar o streaming
         time.sleep(5)
@@ -144,7 +144,7 @@ def _data_stream():
             continue
 
 # Define a DAG do Airflow
-with DAG("-real-time-etl-stack",
+with DAG("real-time-etl-stack",
          # Define os argumentos padrão da DAG
          default_args=default_args,
          # Define o agendamento da DAG como uma vez por dia

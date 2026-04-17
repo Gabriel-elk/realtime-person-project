@@ -118,9 +118,10 @@ def cria_spark_connection():
             .master("spark://spark-master:7077")
             .config(
                 "spark.jars.packages",
-                "com.datastax.spark:spark-cassandra-connector_2.12:3.4.1,"
-                "org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1",
+                "com.datastax.spark:spark-cassandra-connector_2.12:3.5.0,"#não alterar versões de conectores sem saber se eles são compatíveis
+                "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4",#não alterar versões de conectores sem saber se eles são compatíveis
             )
+            .config("spark.sql.streaming.kafka.useDeprecatedOffsetFetching", "true") 
             .config("spark.cassandra.connection.host", "cassandra")
             .config("spark.cassandra.connection.port", "9042")
             .config("spark.executor.memory", "1g")
@@ -143,11 +144,14 @@ def cria_kafka_connection(spark_conn, stream_mode):
     try:
         # Configura e cria um DataFrame Spark para leitura de dados do Kafka
         spark_df = (
-            spark_conn.readStream.format("kafka")
-            .option("kafka.bootstrap.servers", "broker:29092")
-            .option("subscribe", "kafka_topic")
-            .option("startingOffsets", stream_mode)
-            .load()
+        spark_conn.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", "broker:29092")
+        .option("subscribe", "_kafka_topic")
+        .option("startingOffsets", stream_mode)
+        .option("kafka.security.protocol", "PLAINTEXT")
+        .option("kafka.session.timeout.ms", "10000")
+        .option("kafka.request.timeout.ms", "20000")
+        .load()
         )
         logging.info(" Log - Dataframe Kafka criado com sucesso")
         return spark_df

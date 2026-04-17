@@ -11,8 +11,8 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: "broker,controller"
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@broker:9093"
-      KAFKA_LISTENERS: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://broker:9093"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,CONTROLLER://broker:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://broker:29092,PLAINTEXT_HOST://broker:9092" #listener interno do broker do kafka para conecções de rede interna
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT"
       KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"  # Ajuste: variável renomeada (era KAFKA_CFG_CONTROLLER_LISTENER_NAMES na imagem Bitnami)
@@ -20,6 +20,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       CLUSTER_ID: "networkproject-kafka-cluster-01"  # Ajuste: obrigatório na imagem Apache Kafka para modo KRaft
     healthcheck:
       test: ["CMD", "bash", "-c", "nc -z localhost 9092"]
@@ -27,7 +28,7 @@ services:
       timeout: 15s
       retries: 5
     networks:
-      - networkproject
+    - networkproject
 
   webserver:
     image: apache/airflow:2.10.4-python3.11
@@ -38,7 +39,7 @@ services:
       - LOAD_EX=n
       - EXECUTOR=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW_WEBSERVER_SECRET_KEY=security_key
+      - AIRFLOW__WEBSERVER__SECRET_KEY=security_key
     logging:
       options:
         max-size: 10m
@@ -70,7 +71,7 @@ services:
       - LOAD_EX=n
       - EXECUTOR=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW_WEBSERVER_SECRET_KEY=security_key
+      - AIRFLOW__WEBSERVER__SECRET_KEY=security_key
     command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
     networks:
       - networkproject
@@ -93,7 +94,7 @@ services:
     container_name: spark-master
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master  # Ajuste: path absoluto /opt/spark/bin/ (era bin/ na imagem Bitnami)
     ports:
-      - "9090:8080"
+      - "9091:8080"
       - "7077:7077"
     networks:
       - networkproject
@@ -122,11 +123,59 @@ services:
       - HEAP_NEWSIZE=100M
       - CASSANDRA_USERNAME=cassandra
       - CASSANDRA_PASSWORD=cassandra
+      - LOCAL_JMX=no
+    volumes:
+    - ./cassandra/jvm-server.options:/etc/cassandra/jvm-server.options
+    - ./cassandra/cassandra-env.sh:/etc/cassandra/cassandra-env.sh
     networks:
       - networkproject
+  cassandra-exporter:
+    image: bitnami/jmx-exporter:latest
+    container_name: cassandra-exporter
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./cassandra-exporter/config.yml:/opt/bitnami/jmx-exporter/conf/config.yml
+    command:
+      - "8081"
+      - "/opt/bitnami/jmx-exporter/conf/config.yml"
+    environment:
+      JVM_OPTS: >-
+        -Dcom.sun.jndi.rmiURLParsing=legacy
+        -Djava.rmi.server.hostname=cassandra
+    depends_on:
+      - cassandra_db
+    networks:
+      - networkproject
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - cassandra_db
+    networks:
+      - networkproject
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./grafana-storage:/var/lib/grafana
+      - ./grafana-plugins:/var/lib/grafana/plugins
+    networks:
+      - networkproject 
+    depends_on:
+      - cassandra_db
 
 networks:
   networkproject:
+  
 
 
 

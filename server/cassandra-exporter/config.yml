@@ -1,0 +1,22 @@
+startDelaySeconds: 0
+hostPort: cassandra:7199
+ssl: false
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+rules:
+  - pattern: 'org.apache.cassandra.metrics<type=(\w+), name=(\w+)><>Value'
+    name: cassandra_$1_$2
+    labels: {}
+  - pattern: 'org.apache.cassandra.metrics<type=(\w+), keyspace=(\w+), scope=(\w+), name=(\w+)><>(Value|Count|OneMinuteRate)'
+    name: cassandra_$1_$4_$5
+    labels:
+      keyspace: "$2"
+      scope: "$3"
+  - pattern: 'org.apache.cassandra.metrics<type=Storage, name=Load><>Count'
+    name: cassandra_storage_load_bytes  
+
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>used:'
+    name: jvm_memory_heap_used_bytes
+
+  - pattern: 'java.lang<type=Memory><HeapMemoryUsage>max:'
+    name: jvm_memory_heap_max_bytes

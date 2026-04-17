@@ -1,0 +1,5 @@
+-Dcassandra.jmx.remote.port=7199
+-Dcom.sun.management.jmxremote.authenticate=false
+-Dcom.sun.management.jmxremote.ssl=false
+-Dcom.sun.jndi.rmiURLParsing=legacy
+-Djava.rmi.server.hostname=cassandra
