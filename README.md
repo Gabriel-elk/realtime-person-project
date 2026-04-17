@@ -132,14 +132,69 @@ SELECT * FROM tb_usuarios;
 
 ## Possíveis Melhorias
 
-* Adicionar monitoramento (Prometheus/Grafana)
+* Adicionar monitoramento (Prometheus/Grafana) ✅
 * Implementar tratamento de falhas no pipeline
 * Adicionar testes automatizados
-* Criar dashboard para visualização dos dados
+* Criar dashboard para visualização dos dados 
 * Configurar CI/CD
 
 ---
+17/04/2026
+## Monitoramento com Prometheus e Grafana
 
-## Autor
+Foi implementada uma camada de monitoramento com **Prometheus** e **Grafana** para acompanhar a saúde dos serviços e o comportamento do banco Cassandra em tempo real.
 
+Nesta implementação, o monitoramento do Cassandra foi realizado com **JMX Exporter em modo Standalone**, ou seja, em um container separado do banco. Essa abordagem foi escolhida para evitar adicionar mais carga diretamente na instância do Cassandra, mantendo o banco mais isolado e reduzindo o impacto no consumo de recursos.
+
+### Componentes adicionados
+
+* **Prometheus** para coleta de métricas
+* **Grafana** para visualização dos dashboards
+* **JMX Exporter Standalone** para exposição das métricas do Cassandra
+
+### Métricas monitoradas
+
+Entre as métricas observadas no projeto, destacam-se:
+
+* Status do serviço (**up/down**)
+* Uso de memória heap do Cassandra
+* Espaço consumido pelo Cassandra
+* Número de clientes conectados ao banco
+
+### Observações sobre a implementação
+
+* O exporter do Cassandra foi configurado em modo **Standalone**
+* O Prometheus realiza o scrape das métricas expostas pelo exporter
+* O Grafana consome os dados do Prometheus para geração dos dashboards
+* Essa abordagem facilita a observabilidade do ambiente sem acoplar o exporter diretamente ao processo principal do banco
+
+---
+
+No Cassandra, a coleta de métricas foi realizada com **JMX Exporter em modo Standalone**, executado em um container separado do banco. Essa abordagem foi adotada para reduzir o acoplamento da instrumentação ao processo principal do Cassandra e evitar impacto desnecessário no consumo de recursos do banco.
+
+### Ajustes realizados no Cassandra Exporter
+
+Para expor métricas relacionadas ao uso de memória da JVM, foram adicionados os seguintes parâmetros no `cassandra-exporter`:
+
+```yaml
+- pattern: 'java.lang<type=Memory><HeapMemoryUsage>used:'
+  name: jvm_memory_heap_used_bytes
+
+- pattern: 'java.lang<type=Memory><HeapMemoryUsage>max:'
+  name: jvm_memory_heap_max_bytes
+```
+
+## Possíveis Correções e Ajustes
+
+Durante a configuração do ambiente, alguns pontos podem precisar de ajuste dependendo do ambiente:
+
+### Broker(nome do kafka) pode não ter tópicos adicionados, rode esse comando na VM do broker para fazer esse ajuste (rode caso ocorra um erro de implementação da conecção broker/airflow
+Verificar se existe
+
+```bash
+    "
+    /opt/kafka/bin/kafka-topics.sh --bootstrap-server broker:29092 --create --if-not-exists --topic _kafka_topic --partitions 1 --replication-factor 1 &&
+    echo 'Tópico criado com sucesso!'
+    "
+````
 Gabriel Turmena
