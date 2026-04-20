@@ -184,17 +184,45 @@ Para expor métricas relacionadas ao uso de memória da JVM, foram adicionados o
   name: jvm_memory_heap_max_bytes
 ```
 
-## Possíveis Correções e Ajustes
+## Possíveis Correções Ajustes e Pontos de Atenção
 
 Durante a configuração do ambiente, alguns pontos podem precisar de ajuste dependendo do ambiente:
 
 ### Broker(nome do kafka) pode não ter tópicos adicionados, rode esse comando na VM do broker para fazer esse ajuste (rode caso ocorra um erro de implementação da conecção broker/airflow
-Verificar se existe
+Primeiro tentar realizar sem implementar o bash no broker)
 
 ```bash
     "
     /opt/kafka/bin/kafka-topics.sh --bootstrap-server broker:29092 --create --if-not-exists --topic _kafka_topic --partitions 1 --replication-factor 1 &&
     echo 'Tópico criado com sucesso!'
     "
-````
-Gabriel Turmena
+```
+
+## Verifique a implementação de rede o Cliente e o servidor precisam estar no mesmo ambiente de rede, para fazer o cliente começar a rodar caso ele não suba automáticamente pelo comando cmd do yaml abaixo (ele vai estar comentado dentro do dockerflile descomente essa opção) ou rode o comando abaixo dentro da pasta client:
+``` yaml
+# Comando de entrada padrão
+#CMD ["python", "consumer_stream.py", "--mode", "append"]
+```
+```bash
+docker run --name client -dit --network server_networkproject kafka-spark-cassandra-consumer
+```
+
+```bash (dentro do contêiner na pasta que está o arquivo .py)
+python consumer_stream.py --mode initial
+```
+
+## Dentro do Entrypoint.sh você vai se deparar com as configurações e permissões do usuário admin 
+```
+if [ ! -f "/opt/airflow/airflow.db" ]; then
+  airflow db init && \
+  airflow users create \
+    --username admin \
+    --firstname admin \
+    --lastname admin \
+    --role Admin \ role de admin (não mexer)
+    --email yourmail@gmail.com \ seu e-mail para configuração de smtp e envios de e-mails
+    --password yourPassword teu password que vai ser usado para logar no airflow
+fi
+```
+Autor : Gabriel Turmena
+Contato: gtcarvalho2005@gmail.com
