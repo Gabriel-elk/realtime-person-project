@@ -230,6 +230,30 @@ if [ ! -f "/opt/airflow/airflow.db" ]; then
     --password yourPassword teu password que vai ser usado para logar no airflow
 fi
 ```
+
+
+## Arquitetura
+
+```mermaid
+graph LR
+    API["🌐 RandomUser API\nFonte de dados"]
+    AIR["⚙️ Airflow\nTrigger manual"]
+    KAF["📨 Kafka\nBuffer · 7 dias"]
+    SPK["⚡ Spark\nProcessamento"]
+    CAS["🗄️ Cassandra\nPersistência"]
+    EXP["📡 Cassandra Exporter\nStandalone JMX"]
+    PROM["🔍 Prometheus\nColeta de métricas"]
+    GRAF["📊 Grafana\nDashboards"]
+
+    API --> AIR
+    AIR --> KAF
+    KAF --> SPK
+    SPK --> CAS
+
+    CAS --> EXP
+    EXP --> PROM
+    PROM --> GRAF
+```
 Autor : Gabriel Turmena
 
 Contato: gtcarvalho2005@gmail.com
