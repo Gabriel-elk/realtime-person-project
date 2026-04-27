@@ -67,7 +67,7 @@ A estrutura inclui:
 Certifique-se de que o Docker Desktop está em execução. (todos os comandos devem ser executados nas respectivas pastas em que os dockerfiles estão)
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ---
@@ -75,7 +75,7 @@ docker-compose up -d
 ### 2. Parar os containers
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -83,7 +83,7 @@ docker-compose down
 ### 3. Rebuild dos containers (após alterações)
 
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ---
